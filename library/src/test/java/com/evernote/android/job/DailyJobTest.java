@@ -1,5 +1,7 @@
 package com.evernote.android.job;
 
+import android.support.annotation.NonNull;
+
 import com.evernote.android.job.test.DummyJobs;
 import com.evernote.android.job.test.JobRobolectricTestRunner;
 import com.evernote.android.job.test.TestClock;
@@ -12,7 +14,9 @@ import org.junit.runner.RunWith;
 import org.junit.runners.MethodSorters;
 
 import java.util.Calendar;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.assertj.core.api.Java6Assertions.assertThat;
 
@@ -213,5 +217,84 @@ public class DailyJobTest extends BaseJobManagerTest {
 
         assertThat(request).isNotNull();
         assertThat(request.isExact()).isFalse();
+    }
+
+    @Test
+    public void verifyScheduledTwiceOverridesExisting() {
+        long time = 1L;
+
+        DailyJob.schedule(DummyJobs.createBuilder(DummyJobs.SuccessJob.class), time, time);
+        DailyJob.schedule(DummyJobs.createBuilder(DummyJobs.SuccessJob.class), time, time);
+        Set<JobRequest> requests = manager().getAllJobRequests();
+
+        assertThat(requests).hasSize(1);
+        assertThat(requests.iterator().next().getTag()).isEqualTo(DummyJobs.SuccessJob.TAG);
+    }
+
+    @Test
+    public void verifyScheduledImmediatelyIsNotOverridden() {
+        long time = 1L;
+
+        DailyJob.startNowOnce(DummyJobs.createBuilder(DummyJobs.SuccessJob.class));
+        DailyJob.schedule(DummyJobs.createBuilder(DummyJobs.SuccessJob.class), time, time);
+        Set<JobRequest> requests = manager().getAllJobRequests();
+
+        assertThat(requests).hasSize(2);
+        for (JobRequest request : requests) {
+            assertThat(request.getTag()).isEqualTo(DummyJobs.SuccessJob.TAG);
+        }
+    }
+
+    @Test
+    public void verifyImmediateExecution() {
+        long time = 1L;
+
+        int nowJobId = DailyJob.startNowOnce(DummyJobs.createBuilder(DummyJobs.SuccessJob.class));
+        int normalJobId = DailyJob.schedule(DummyJobs.createBuilder(DummyJobs.SuccessJob.class), time, time);
+        assertThat(manager().getAllJobRequests()).hasSize(2);
+
+        executeJob(nowJobId, Job.Result.SUCCESS);
+
+        assertThat(manager().getAllJobRequests()).hasSize(1);
+        assertThat(manager().getJobRequest(normalJobId)).isNotNull();
+    }
+
+    @Test
+    public void verifyRequirementsEnforcedSkipsJob() {
+        long time = 1L;
+
+        final AtomicBoolean atomicBoolean = new AtomicBoolean(true);
+
+        manager().addJobCreator(new JobCreator() {
+            @Override
+            public Job create(@NonNull String tag) {
+                return new DailyJob() {
+                    @NonNull
+                    @Override
+                    protected DailyJobResult onRunDailyJob(@NonNull Params params) {
+                        atomicBoolean.set(false);
+                        return DailyJobResult.SUCCESS;
+                    }
+                };
+            }
+        });
+
+        int jobId = DailyJob.schedule(new JobRequest.Builder("any").setRequiresCharging(true).setRequirementsEnforced(true), time, time);
+        assertThat(manager().getAllJobRequests()).hasSize(1);
+
+        executeJob(jobId, Job.Result.SUCCESS);
+
+        assertThat(manager().getAllJobRequests()).hasSize(1);
+        assertThat(atomicBoolean.get()).isTrue();
+
+        // now verify that the job is called without the requirement
+        manager().cancelAll();
+        jobId = DailyJob.schedule(new JobRequest.Builder("any").setRequiresCharging(false).setRequirementsEnforced(true), time, time);
+        assertThat(manager().getAllJobRequests()).hasSize(1);
+
+        executeJob(jobId, Job.Result.SUCCESS);
+
+        assertThat(manager().getAllJobRequests()).hasSize(1);
+        assertThat(atomicBoolean.get()).isFalse();
     }
 }
