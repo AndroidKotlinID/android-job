@@ -1,3 +1,9 @@
+## 1.2.2 (2018-01-13)
+* Use only the `support-compat` instead of the full `support-v4` library, see #326
+* Use a `ReadWriteLock` for synchronizing the database reads and writes, see #344
+* Update the last run time for daily jobs, see #332
+* Shift the max execution delay if the requirements are enforced, see #325
+
 ## 1.2.1 (2017-11-23)
 * Add option to override the default background executor, see #292
 * Don't keep a strong reference to finished jobs to allow freeing memory, see #299

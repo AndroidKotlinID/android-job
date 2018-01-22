@@ -252,6 +252,14 @@ public final class JobRequest {
     }
 
     /**
+     * @return Whether any of the requirements is different than the default value.
+     */
+    public boolean hasRequirements() {
+        return requiresCharging() || requiresDeviceIdle() || requiresBatteryNotLow() || requiresStorageNotLow()
+                || requiredNetworkType() != DEFAULT_NETWORK_TYPE;
+    }
+
+    /**
      * @return The extras for this job.
      */
     public PersistableBundleCompat getExtras() {
@@ -357,7 +365,7 @@ public final class JobRequest {
     }
 
     /**
-     * Returns the time the job did run the last time. This is only useful for periodic jobs
+     * Returns the time the job did run the last time. This is only useful for periodic jobs, daily jobs
      * or jobs which were rescheduled. If the job didn't run, yet, then it returns 0.
      *
      * @return The last time the rescheduled or periodic job did run.
