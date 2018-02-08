@@ -1,3 +1,12 @@
+## 1.2.4 (2018-02-08)
+* Add `scheduleAsync()` to the `DailyJob` class for scheduling daily jobs asynchronously to avoid IO operations on the main thread, see #371
+
+## 1.2.3 (2018-02-07)
+* Add an `onCancel()` method to get notified when the job is canceled, see #359
+* Expose the `meetsRequirements()` method to have the option to check all requirements manually, see #349
+* Don't close the database automatically after each interaction, but give an option in the `JobConfig` class to revert this behavior, see #344
+* Add `scheduleAsync()` for scheduling jobs asynchronously to avoid IO operations on the main thread
+
 ## 1.2.2 (2018-01-13)
 * Use only the `support-compat` instead of the full `support-v4` library, see #326
 * Use a `ReadWriteLock` for synchronizing the database reads and writes, see #344
