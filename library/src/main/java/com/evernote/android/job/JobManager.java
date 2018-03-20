@@ -168,7 +168,9 @@ public final class JobManager {
      *
      * @param request The {@link JobRequest} which will run in the future.
      */
-    public void schedule(@NonNull JobRequest request) {
+    public synchronized void schedule(@NonNull JobRequest request) {
+        // call must be synchronized, otherwise with isUpdateCurrent() true it's possible to end up in a race condition with multiple jobs scheduled
+
         if (mJobCreatorHolder.isEmpty()) {
             CAT.w("you haven't registered a JobCreator with addJobCreator(), it's likely that your job never will be executed");
         }
@@ -404,9 +406,8 @@ public final class JobManager {
     }
 
     private boolean cancelInner(@Nullable Job job) {
-        if (job != null && !job.isFinished() && !job.isCanceled()) {
+        if (job != null && job.cancel(true)) {
             CAT.i("Cancel running %s", job);
-            job.cancel(true);
             return true;
         } else {
             return false;

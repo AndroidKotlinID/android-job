@@ -129,4 +129,31 @@ public class DeviceTest {
 
         assertThat(Device.getNetworkType(context)).isEqualTo(JobRequest.NetworkType.UNMETERED);
     }
+
+    @Test
+    public void testNetworkStateVpn() {
+        NetworkInfo networkInfo = mock(NetworkInfo.class);
+        when(networkInfo.isConnected()).thenReturn(true);
+        when(networkInfo.isConnectedOrConnecting()).thenReturn(true);
+        when(networkInfo.getType()).thenReturn(ConnectivityManager.TYPE_VPN);
+
+        ConnectivityManager connectivityManager = mock(ConnectivityManager.class);
+        when(connectivityManager.getActiveNetworkInfo()).thenReturn(networkInfo);
+
+        Context context = mock(MockContext.class);
+        when(context.getSystemService(Context.CONNECTIVITY_SERVICE)).thenReturn(connectivityManager);
+
+        assertThat(Device.getNetworkType(context)).isEqualTo(JobRequest.NetworkType.NOT_ROAMING);
+    }
+
+    @Test
+    public void testPlatformBug() {
+        ConnectivityManager connectivityManager = mock(ConnectivityManager.class);
+        when(connectivityManager.getActiveNetworkInfo()).thenThrow(new NullPointerException());
+
+        Context context = mock(MockContext.class);
+        when(context.getSystemService(Context.CONNECTIVITY_SERVICE)).thenReturn(connectivityManager);
+
+        assertThat(Device.getNetworkType(context)).isEqualTo(JobRequest.NetworkType.ANY);
+    }
 }
