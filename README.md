@@ -8,7 +8,7 @@ Download [the latest version](http://search.maven.org/#search|gav|1|g:"com.evern
 
 ```groovy
 dependencies {
-    implementation 'com.evernote:android-job:1.2.5'
+    implementation 'com.evernote:android-job:1.2.6'
 }
 ```
 
@@ -151,13 +151,28 @@ See the [FAQ](https://github.com/evernote/android-job/wiki/FAQ) in the [Wiki](ht
 
 ## Google Play Services
 
-This library does **not** automatically bundle the Google Play Services, because the dependency is really heavy and not all apps want to include them. That's why you need to add the dependency manually, if you want that the library uses the `GcmNetworkManager` on Android 4.
+This library does **not** automatically bundle the Google Play Services, because the dependency is really heavy and not all apps want to include them. That's why you need to add the dependency manually, if you want that the library uses the `GcmNetworkManager` on Android 4, then include the following dependency.
 ```groovy
 dependencies {
     compile "com.google.android.gms:play-services-gcm:latest_version"
 }
 ```
+Because of recent changes in the support library, you must turn on the service manually in your `AndroidManifest.xml`
+```xml
+<service
+    android:name="com.evernote.android.job.gcm.PlatformGcmService"
+    android:enabled="true"
+    tools:replace="android:enabled"/>
+```
+If you don't turn on the service, the library will always use the `AlarmManager` on Android 4.x.
+
 Crashes after removing the GCM dependency is a known limitation of the Google Play Services. Please take a look at [this workaround](https://github.com/evernote/android-job/wiki/FAQ#how-can-i-remove-the-gcm-dependency-from-my-app) to avoid those crashes.
+
+## WorkManager
+
+[WorkManager](https://developer.android.com/topic/libraries/architecture/workmanager) is a new architecture component from Google and tries to solve a very similar problem this library tries to solve: implementing background jobs only once for all Android versions. The API is very similar to this library, but provides more features like chaining work items and it runs its own executor.
+
+If you start a new project, you should be using `WorkManager` instead of this library. You should also start migrating your code from this library to `WorkManager`. At some point in the future this library will deprecated.
 
 ## License
 ```

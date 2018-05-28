@@ -1,27 +1,17 @@
 /*
- * Copyright 2007-present Evernote Corporation.
- * All rights reserved.
+ * Copyright (C) 2018 Evernote Corporation
  *
- * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * 1. Redistributions of source code must retain the above copyright notice, this
- *    list of conditions and the following disclaimer.
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- * 2. Redistributions in binary form must reproduce the above copyright notice,
- *    this list of conditions and the following disclaimer in the documentation
- *    and/or other materials provided with the distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
- * IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
- * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
- * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
- * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
- * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package com.evernote.android.job.gcm;
 
@@ -29,6 +19,7 @@ import android.content.Context;
 import android.support.annotation.NonNull;
 
 import com.evernote.android.job.JobProxy;
+import com.evernote.android.job.JobProxyIllegalStateException;
 import com.evernote.android.job.JobRequest;
 import com.evernote.android.job.util.JobCat;
 import com.evernote.android.job.util.JobUtil;
@@ -70,7 +61,7 @@ public class JobProxyGcm implements JobProxy {
                 .setExecutionWindow(startSeconds, endSeconds)
                 .build();
 
-        mGcmNetworkManager.schedule(task);
+        scheduleTask(task);
 
         CAT.d("Scheduled OneoffTask, %s, start %s, end %s (from now), reschedule count %d", request, JobUtil.timeToString(startMs),
                 JobUtil.timeToString(endMs), Common.getRescheduleCount(request));
@@ -83,7 +74,7 @@ public class JobProxyGcm implements JobProxy {
                 .setFlex(request.getFlexMs() / 1_000)
                 .build();
 
-        mGcmNetworkManager.schedule(task);
+        scheduleTask(task);
 
         CAT.d("Scheduled PeriodicTask, %s, interval %s, flex %s", request, JobUtil.timeToString(request.getIntervalMs()),
                 JobUtil.timeToString(request.getFlexMs()));
@@ -100,7 +91,7 @@ public class JobProxyGcm implements JobProxy {
                 .setExecutionWindow(startMs / 1_000, endMs / 1_000)
                 .build();
 
-        mGcmNetworkManager.schedule(task);
+        scheduleTask(task);
 
         CAT.d("Scheduled periodic (flex support), %s, start %s, end %s, flex %s", request, JobUtil.timeToString(startMs),
                 JobUtil.timeToString(endMs), JobUtil.timeToString(request.getFlexMs()));
@@ -115,6 +106,18 @@ public class JobProxyGcm implements JobProxy {
     public boolean isPlatformJobScheduled(JobRequest request) {
         // there is no option to check whether a task is scheduled, assume it is
         return true;
+    }
+
+    private void scheduleTask(Task task) {
+        try {
+            mGcmNetworkManager.schedule(task);
+        } catch (IllegalArgumentException e) {
+            if (e.getMessage() != null && e.getMessage().startsWith("The GcmTaskService class you provided")) {
+                throw new JobProxyIllegalStateException(e);
+            } else {
+                throw e;
+            }
+        }
     }
 
     protected <T extends Task.Builder> T prepareBuilder(T builder, JobRequest request) {
