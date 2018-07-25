@@ -10,6 +10,7 @@ import com.evernote.android.job.JobProxyIllegalStateException;
 import com.evernote.android.job.JobRequest;
 import com.evernote.android.job.util.JobCat;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -110,8 +111,13 @@ public class JobProxyWorkManager implements JobProxy {
         return PREFIX + jobId;
     }
 
-    /*package*/ static int getJobIdFromTag(String tag) {
-        return Integer.parseInt(tag.substring(PREFIX.length()));
+    /*package*/ static int getJobIdFromTags(Collection<String> tags) {
+        for (String tag : tags) {
+            if (tag.startsWith(PREFIX)) {
+                return Integer.parseInt(tag.substring(PREFIX.length()));
+            }
+        }
+        return -1;
     }
 
     private static Constraints buildConstraints(JobRequest request) {
@@ -148,10 +154,18 @@ public class JobProxyWorkManager implements JobProxy {
 
     private WorkManager getWorkManager() {
         // don't cache the instance, it could change under the hood, e.g. during tests
-        WorkManager workManager = WorkManager.getInstance();
+        WorkManager workManager;
+        try {
+            workManager = WorkManager.getInstance();
+        } catch (Exception e) {
+            workManager = null;
+        }
         if (workManager == null) {
             WorkManager.initialize(mContext, new Configuration.Builder().build());
-            workManager = WorkManager.getInstance();
+            try {
+                workManager = WorkManager.getInstance();
+            } catch (Exception ignored) {
+            }
             CAT.w("WorkManager getInstance() returned null, now: %s", workManager);
         }
 
