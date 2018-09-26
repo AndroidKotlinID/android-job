@@ -34,6 +34,8 @@ android {
 
     resourcePrefix 'job_'
 
+    useLibrary 'android.test.mock'
+
     defaultConfig {
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
@@ -63,6 +65,10 @@ android {
                 events 'passed', 'skipped', 'failed', 'standardOut', 'standardError'
             }
         }
+    }
+
+    packagingOptions {
+        exclude 'META-INF/proguard/androidx-annotations.pro'
     }
 }
 
