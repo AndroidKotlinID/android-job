@@ -3,24 +3,21 @@ package com.evernote.android.job;
 import android.app.Application;
 import android.content.Context;
 import android.os.Bundle;
-import android.support.annotation.NonNull;
-import android.support.test.InstrumentationRegistry;
-import android.support.test.filters.LargeTest;
-import android.support.test.runner.AndroidJUnit4;
-
+import androidx.annotation.NonNull;
+import androidx.test.core.app.ApplicationProvider;
+import androidx.test.ext.junit.runners.AndroidJUnit4;
+import androidx.test.filters.LargeTest;
 import com.evernote.android.job.gcm.PlatformGcmService;
 import com.evernote.android.job.v14.PlatformAlarmService;
 import com.evernote.android.job.v14.PlatformAlarmServiceExact;
 import com.evernote.android.job.v21.PlatformJobService;
-
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assume.assumeTrue;
@@ -121,7 +118,7 @@ public class PlatformTest {
 
     private void testOneOff(JobApi api, long wait, TimeUnit timeUnit) throws Exception {
         // ignore test if not supported
-        assumeTrue(api.isSupported(InstrumentationRegistry.getTargetContext()));
+        assumeTrue(api.isSupported(ApplicationProvider.getApplicationContext()));
 
         switch (api) {
             case V_14:

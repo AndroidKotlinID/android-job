@@ -1,19 +1,17 @@
 package com.evernote.android.job;
 
 import android.os.Bundle;
-import android.support.annotation.NonNull;
-import android.support.test.InstrumentationRegistry;
-import android.support.test.filters.LargeTest;
-import android.support.test.runner.AndroidJUnit4;
-
+import androidx.annotation.NonNull;
+import androidx.test.core.app.ApplicationProvider;
+import androidx.test.ext.junit.runners.AndroidJUnit4;
+import androidx.test.filters.LargeTest;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assume.assumeTrue;
@@ -103,7 +101,7 @@ public class TransientBundleTest {
         mJob = new TestJob();
 
         // ignore test if not supported
-        assumeTrue(api.isSupported(InstrumentationRegistry.getTargetContext()));
+        assumeTrue(api.isSupported(ApplicationProvider.getApplicationContext()));
 
         JobConfig.forceApi(api);
 
@@ -116,7 +114,7 @@ public class TransientBundleTest {
         JobRequest request = mManager.getJobRequest(jobId);
         assertThat(request).isNotNull();
 
-        boolean scheduled = api.getProxy(InstrumentationRegistry.getContext()).isPlatformJobScheduled(request);
+        boolean scheduled = api.getProxy(ApplicationProvider.getApplicationContext()).isPlatformJobScheduled(request);
         assertThat(scheduled).isTrue();
 
         mJob.verifyJob(wait, timeUnit);
